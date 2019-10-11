@@ -21,8 +21,10 @@ interface ImageSequenceProps {
     loop?: boolean;
     /** Customise loop */
     loopInfo?: LoopInfo;
-    /** make it look fancy */
-    style?: React.CSSProperties
+    /** Width of animation */
+    width: number
+    /** Height of animation */
+    height: number
 }
 
 declare class ImageSequence extends Component<ImageSequenceProps> {
