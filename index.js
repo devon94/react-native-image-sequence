@@ -13,7 +13,7 @@ class ImageSequence extends Component {
 
     // reorder elements if start-index is different from 0 (beginning)
     if (this.props.startFrameIndex !== 0) {
-      normalized = [...normalized.slice(this.props.startFrameIndex), ...normalized.slice(0, this.props.startFrameIndex)];
+      normalized = [...normalized.slice(this.props.startFrameIndex), ...normalized.slice(0, this.props.startFrameIndex)]
     }
 
     const { style, ...rest } = this.props
@@ -23,7 +23,7 @@ class ImageSequence extends Component {
         <RCTImageSequence {...rest} style={style} images={normalized} />
       </View>
 
-    );
+    )
   }
 }
 
