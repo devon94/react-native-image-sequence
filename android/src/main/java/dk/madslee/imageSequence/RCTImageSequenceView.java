@@ -122,7 +122,6 @@ public class RCTImageSequenceView extends ImageView {
         this.hasLoopInfo = true;
 
         // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
-        // no fucking clue what the comment above means comment means so i'll do this for now
         if (isLoaded()) {
             setupAnimationDrawable(0);
         }
@@ -133,7 +132,6 @@ public class RCTImageSequenceView extends ImageView {
         this.hasLoopInfo = true;
 
         // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
-        // no fucking clue what the comment above means comment means so i'll do this for now
         if (isLoaded()) {
             setupAnimationDrawable(0);
         }
