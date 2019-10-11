@@ -39,7 +39,7 @@ public class RCTImageSequenceManager extends SimpleViewManager<RCTImageSequenceV
      * @param loopFrom
      */
     @ReactProp(name = "hasLoopInfo")
-    public void setHasLoopInfo(final RCTImageSequenceView view, Integer hasLoopInfo) {
+    public void setHasLoopInfo(final RCTImageSequenceView view, Boolean hasLoopInfo) {
         view.setHasLoopInfo(hasLoopInfo);
     }
 
