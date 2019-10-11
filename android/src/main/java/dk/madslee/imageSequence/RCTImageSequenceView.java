@@ -16,16 +16,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.RejectedExecutionException;
 
-
 public class RCTImageSequenceView extends ImageView {
     private Integer framesPerSecond = 24;
     private Integer loopFrom = 0;
     private Integer loopTo = 0;
     private Boolean loop = true;
     private Boolean hasLoopInfo = false;
+    private Boolean didPlayOnce = false;
     private ArrayList<AsyncTask> activeTasks;
     private HashMap<Integer, Bitmap> bitmaps;
     private RCTResourceDrawableIdHelper resourceDrawableIdHelper;
+    private static final String TAG = "RCTImageSequenceView";
 
     public RCTImageSequenceView(Context context) {
         super(context);
@@ -53,9 +54,9 @@ public class RCTImageSequenceView extends ImageView {
             return this.loadBitmapByLocalResource(this.uri);
         }
 
-
         private Bitmap loadBitmapByLocalResource(String uri) {
-            return BitmapFactory.decodeResource(this.context.getResources(), resourceDrawableIdHelper.getResourceDrawableId(this.context, uri));
+            return BitmapFactory.decodeResource(this.context.getResources(),
+                    resourceDrawableIdHelper.getResourceDrawableId(this.context, uri));
         }
 
         private Bitmap loadBitmapByExternalURL(String uri) {
@@ -89,7 +90,7 @@ public class RCTImageSequenceView extends ImageView {
         activeTasks.remove(downloadImageTask);
 
         if (activeTasks.isEmpty()) {
-            setupAnimationDrawable(0);
+            setupAnimationDrawable();
         }
     }
 
@@ -110,7 +111,7 @@ public class RCTImageSequenceView extends ImageView {
 
             try {
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-            } catch (RejectedExecutionException e){
+            } catch (RejectedExecutionException e) {
                 Log.e("react-native-image-sequence", "DownloadImageTask failed" + e.getMessage());
                 break;
             }
@@ -121,9 +122,10 @@ public class RCTImageSequenceView extends ImageView {
         this.loopFrom = loopFrom;
         this.hasLoopInfo = true;
 
-        // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
+        // updating frames per second, results in building a new AnimationDrawable
+        // (because we cant alter frame duration)
         if (isLoaded()) {
-            setupAnimationDrawable(0);
+            setupAnimationDrawable();
         }
     }
 
@@ -131,18 +133,20 @@ public class RCTImageSequenceView extends ImageView {
         this.loopTo = loopTo;
         this.hasLoopInfo = true;
 
-        // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
+        // updating frames per second, results in building a new AnimationDrawable
+        // (because we cant alter frame duration)
         if (isLoaded()) {
-            setupAnimationDrawable(0);
+            setupAnimationDrawable();
         }
     }
 
     public void setFramesPerSecond(Integer framesPerSecond) {
         this.framesPerSecond = framesPerSecond;
-        
-        // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
+
+        // updating frames per second, results in building a new AnimationDrawable
+        // (because we cant alter frame duration)
         if (isLoaded()) {
-            setupAnimationDrawable(0);
+            setupAnimationDrawable();
         }
     }
 
@@ -151,7 +155,7 @@ public class RCTImageSequenceView extends ImageView {
 
         // updating looping, results in building a new AnimationDrawable
         if (isLoaded()) {
-            setupAnimationDrawable(0);
+            setupAnimationDrawable();
         }
     }
 
@@ -171,53 +175,74 @@ public class RCTImageSequenceView extends ImageView {
         return didPlayOnce;
     }
 
-    private void setupAnimationDrawable(Integer loopFrom) {
-        if (this.hasLoopInfo) {
-            final AnimationDrawable animationDrawable = new AnimationDrawable();
+    private void setDrawable(AnimationDrawable drawable) {
+        this.setImageDrawable(drawable);
+    }
 
-            for (int index = loopFrom; index < this.loopTo; index++) {
+    private void setupAnimationDrawable() {
+        if (this.hasLoopInfo) {
+            final AnimationDrawable initialAnimationDrawable = new AnimationDrawable();
+            final AnimationDrawable loopAnimationDrawable = new AnimationDrawable();
+
+            for (int index = 0; index < this.loopTo; index++) {
                 BitmapDrawable drawable = new BitmapDrawable(this.getResources(), bitmaps.get(index));
-                animationDrawable.addFrame(drawable, 1000 / framesPerSecond);
+                initialAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }
-    
-            animationDrawable.setOneShot(!this.loop);
-    
+
+            for (int index = this.loopFrom; index < this.loopTo; index++) {
+                BitmapDrawable drawable = new BitmapDrawable(this.getResources(), bitmaps.get(index));
+                loopAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
+            }
+
+            loopAnimationDrawable.setOneShot(!this.loop);
+
             final Integer newLoop = this.loopFrom;
-    
-            CustomAnimationDrawable cad = new CustomAnimationDrawable(animationDrawable) {
+
+            CustomAnimationDrawable cad = new CustomAnimationDrawable(initialAnimationDrawable) {
                 @Override
                 public void onAnimationStart() {
                     // Animation has started...
                 }
-    
+
                 @Override
                 public void onAnimationFinish() {
                     if (!hasLooped()) {
-                        this.stop();
-                        setupAnimationDrawable(newLoop);
+                        initialAnimationDrawable.stop();
+                        setDrawable(loopAnimationDrawable);
+                        loopAnimationDrawable.start();
                         setDidPlayOnce(true);
                     }
                 }
-    
+
             };
-    
-            this.setImageDrawable(cad);
+
+            cad.setOneShot(true);
+            setDrawable(cad);
             cad.start();
         } else {
-            final AnimationDrawable animationDrawable = new AnimationDrawable();
+            final AnimationDrawable initialAnimationDrawable = new AnimationDrawable();
 
             for (int index = 0; index < bitmaps.size(); index++) {
                 BitmapDrawable drawable = new BitmapDrawable(this.getResources(), bitmaps.get(index));
-                animationDrawable.addFrame(drawable, 1000 / framesPerSecond);
+                initialAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }
-    
-            animationDrawable.setOneShot(!this.loop);
-    
-            CustomAnimationDrawable cad = new CustomAnimationDrawable(animationDrawable);
-    
+
+            initialAnimationDrawable.setOneShot(!this.loop);
+
+            CustomAnimationDrawable cad = new CustomAnimationDrawable(initialAnimationDrawable) {
+                @Override
+                public void onAnimationStart() {
+                }
+
+                @Override
+                public void onAnimationFinish() {
+                }
+
+            };
+
             this.setImageDrawable(cad);
             cad.start();
         }
-        
+
     }
 }
