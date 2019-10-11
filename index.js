@@ -19,7 +19,7 @@ class ImageSequence extends Component {
     const { style, ...rest } = this.props
 
     return (
-      <View style={{ ...style, marginLeft: 'auto', marginRight: 'auto', display: 'flex' }}>
+      <View style={{ ...style, marginTop: 'auto', marginBottom: 'auto', marginLeft: 'auto', marginRight: 'auto', display: 'flex' }}>
         <RCTImageSequence {...rest} style={style} images={normalized} />
       </View>
 
