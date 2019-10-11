@@ -18,6 +18,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 public class RCTImageSequenceView extends ImageView {
     private Integer framesPerSecond = 24;
+    private Integer startFrame = 0;
     private Integer loopFrom = 0;
     private Integer loopTo = 0;
     private Boolean loop = true;
@@ -117,9 +118,26 @@ public class RCTImageSequenceView extends ImageView {
         }
     }
 
+    public void setHasLoopInfo(Boolean hasLoopInfo) {
+        this.hasLoopInfo = hasLoopInfo;
+
+        if (isLoaded()) {
+            setupAnimationDrawable();
+        }
+    }
+
+    public void setStartFrame(Integer startFrame) {
+        this.startFrame = startFrame;
+
+        // updating frames per second, results in building a new AnimationDrawable
+        // (because we cant alter frame duration)
+        if (isLoaded()) {
+            setupAnimationDrawable();
+        }
+    }
+
     public void setLoopFrom(Integer loopFrom) {
         this.loopFrom = loopFrom;
-        this.hasLoopInfo = true;
 
         // updating frames per second, results in building a new AnimationDrawable
         // (because we cant alter frame duration)
@@ -130,7 +148,6 @@ public class RCTImageSequenceView extends ImageView {
 
     public void setLoopTo(Integer loopTo) {
         this.loopTo = loopTo;
-        this.hasLoopInfo = true;
 
         // updating frames per second, results in building a new AnimationDrawable
         // (because we cant alter frame duration)
@@ -175,7 +192,7 @@ public class RCTImageSequenceView extends ImageView {
             final AnimationDrawable initialAnimationDrawable = new AnimationDrawable();
             final AnimationDrawable loopAnimationDrawable = new AnimationDrawable();
 
-            for (int index = 0; index < this.loopTo; index++) {
+            for (int index = this.startFrame; index < this.loopTo; index++) {
                 BitmapDrawable drawable = new BitmapDrawable(this.getResources(), bitmaps.get(index));
                 initialAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }

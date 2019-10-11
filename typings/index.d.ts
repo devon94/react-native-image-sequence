@@ -1,5 +1,15 @@
 import { Component } from 'react';
 
+
+interface LoopInfo {
+    /** Frame to play animation from. */
+    startFrame?: number
+    /** Frame to start loop. */
+    loopFrom: number;
+    /** Frame to start loop. */
+    loopTo: number;
+  }
+
 interface ImageSequenceProps {
     /** An array of source images. Each element of the array should be the result of a call to require(imagePath). */
     images: any[];
@@ -7,12 +17,10 @@ interface ImageSequenceProps {
     startFrameIndex?: number;
     /** Playback speed of the image sequence. Default: 24 */
     framesPerSecond?: number;
-    /** Should the sequence loop. Default: true */
+    /** Should the sequence loop. Default: false */
     loop?: boolean;
-    /** Frame to start loop. Default: 0 */
-    loopFrom?: number;
-    /** Frame to start loop. Default: images.length */
-    loopTo?: number;
+    /** Customise loop */
+    loopInfo?: LoopInfo;
     /** make it look fancy */
     style?: React.CSSProperties
 }

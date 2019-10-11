@@ -31,8 +31,32 @@ public class RCTImageSequenceManager extends SimpleViewManager<RCTImageSequenceV
         view.setFramesPerSecond(framesPerSecond);
     }
 
+
     /**
-     * sets the speed of the animation.
+     * sets whether or not loop info was passed in.
+     *
+     * @param view
+     * @param loopFrom
+     */
+    @ReactProp(name = "hasLoopInfo")
+    public void setHasLoopInfo(final RCTImageSequenceView view, Integer hasLoopInfo) {
+        view.setHasLoopInfo(hasLoopInfo);
+    }
+
+
+    /**
+     * sets the beginning of the animation when looping.
+     *
+     * @param view
+     * @param loopFrom
+     */
+    @ReactProp(name = "startFrame")
+    public void setStartFrame(final RCTImageSequenceView view, Integer startFrame) {
+        view.setStartFrame(startFrame);
+    }
+
+    /**
+     * sets the beginning of the loop.
      *
      * @param view
      * @param loopFrom
@@ -44,7 +68,7 @@ public class RCTImageSequenceManager extends SimpleViewManager<RCTImageSequenceV
 
 
     /**
-     * sets the speed of the animation.
+     * sets the end of the loop.
      *
      * @param view
      * @param loopTo
