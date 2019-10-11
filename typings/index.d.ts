@@ -9,6 +9,12 @@ interface ImageSequenceProps {
     framesPerSecond?: number;
     /** Should the sequence loop. Default: true */
     loop?: boolean;
+    /** Frame to start loop. Default: 0 */
+    loopFrom?: number;
+    /** Frame to start loop. Default: images.length */
+    loopTo?: number;
+    /** make it look fancy */
+    style?: React.CSSProperties
 }
 
 declare class ImageSequence extends Component<ImageSequenceProps> {

@@ -32,6 +32,30 @@ public class RCTImageSequenceManager extends SimpleViewManager<RCTImageSequenceV
     }
 
     /**
+     * sets the speed of the animation.
+     *
+     * @param view
+     * @param loopFrom
+     */
+    @ReactProp(name = "loopFrom")
+    public void setLoopFrom(final RCTImageSequenceView view, Integer loopFrom) {
+        view.setLoopFrom(loopFrom);
+    }
+
+
+    /**
+     * sets the speed of the animation.
+     *
+     * @param view
+     * @param loopTo
+     */
+    @ReactProp(name = "loopTo")
+    public void setLoopTo(final RCTImageSequenceView view, Integer loopTo) {
+        view.setLoopTo(loopTo);
+    }
+
+
+    /**
      * @param view
      * @param images an array of ReadableMap's {uri: "http://...."} return value of the resolveAssetSource(....)
      */

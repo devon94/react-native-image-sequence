@@ -19,7 +19,10 @@ import java.util.concurrent.RejectedExecutionException;
 
 public class RCTImageSequenceView extends ImageView {
     private Integer framesPerSecond = 24;
+    private Integer loopFrom = 0;
+    private Integer loopTo = 0;
     private Boolean loop = true;
+    private Boolean didPlayOnce = false;
     private ArrayList<AsyncTask> activeTasks;
     private HashMap<Integer, Bitmap> bitmaps;
     private RCTResourceDrawableIdHelper resourceDrawableIdHelper;
@@ -86,7 +89,7 @@ public class RCTImageSequenceView extends ImageView {
         activeTasks.remove(downloadImageTask);
 
         if (activeTasks.isEmpty()) {
-            setupAnimationDrawable();
+            setupAnimationDrawable(0);
         }
     }
 
@@ -114,12 +117,32 @@ public class RCTImageSequenceView extends ImageView {
         }
     }
 
+    public void setLoopFrom(Integer loopFrom) {
+        this.loopFrom = loopFrom;
+
+        // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
+        // no fucking clue what the comment above means comment means so i'll do this for now
+        if (isLoaded()) {
+            setupAnimationDrawable(0);
+        }
+    }
+
+    public void setLoopTo(Integer loopTo) {
+        this.loopTo = loopTo;
+
+        // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
+        // no fucking clue what the comment above means comment means so i'll do this for now
+        if (isLoaded()) {
+            setupAnimationDrawable(0);
+        }
+    }
+
     public void setFramesPerSecond(Integer framesPerSecond) {
         this.framesPerSecond = framesPerSecond;
 
         // updating frames per second, results in building a new AnimationDrawable (because we cant alter frame duration)
         if (isLoaded()) {
-            setupAnimationDrawable();
+            setupAnimationDrawable(0);
         }
     }
 
@@ -128,8 +151,12 @@ public class RCTImageSequenceView extends ImageView {
 
         // updating looping, results in building a new AnimationDrawable
         if (isLoaded()) {
-            setupAnimationDrawable();
+            setupAnimationDrawable(0);
         }
+    }
+
+    public void setDidPlayOnce(Boolean didPlayOnce) {
+        this.didPlayOnce = didPlayOnce;
     }
 
     private boolean isLoaded() {
@@ -140,16 +167,40 @@ public class RCTImageSequenceView extends ImageView {
         return activeTasks != null && !activeTasks.isEmpty();
     }
 
-    private void setupAnimationDrawable() {
-        AnimationDrawable animationDrawable = new AnimationDrawable();
-        for (int index = 0; index < bitmaps.size(); index++) {
+    private boolean hasLooped() {
+        return didPlayOnce;
+    }
+
+    private void setupAnimationDrawable(Integer loopFrom) {
+        final AnimationDrawable animationDrawable = new AnimationDrawable();
+
+        for (int index = loopFrom; index < this.loopTo; index++) {
             BitmapDrawable drawable = new BitmapDrawable(this.getResources(), bitmaps.get(index));
             animationDrawable.addFrame(drawable, 1000 / framesPerSecond);
         }
 
         animationDrawable.setOneShot(!this.loop);
 
-        this.setImageDrawable(animationDrawable);
-        animationDrawable.start();
+        final Integer newLoop = this.loopFrom;
+
+        CustomAnimationDrawable cad = new CustomAnimationDrawable(animationDrawable) {
+            @Override
+            public void onAnimationStart() {
+                // Animation has started...
+            }
+
+            @Override
+            public void onAnimationFinish() {
+                if (!hasLooped()) {
+                    this.stop();
+                    setupAnimationDrawable(newLoop);
+                    setDidPlayOnce(true);
+                }
+            }
+
+        };
+
+        this.setImageDrawable(cad);
+        cad.start();
     }
 }
