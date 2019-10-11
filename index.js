@@ -16,10 +16,13 @@ class ImageSequence extends Component {
       normalized = [...normalized.slice(this.props.startFrameIndex), ...normalized.slice(0, this.props.startFrameIndex)];
     }
 
+    const { style, ...rest } = this.props
+
     return (
-      <RCTImageSequence
-        {...this.props}
-        images={normalized} />
+      <View style={{ ...style, marginLeft: 'auto', marginRight: 'auto', display: 'flex' }}>
+        <RCTImageSequence {...rest} style={style} images={normalized} />
+      </View>
+
     );
   }
 }
@@ -44,7 +47,9 @@ const RCTImageSequence = requireNativeComponent('RCTImageSequence', {
       uri: string.isRequired
     })).isRequired,
     framesPerSecond: number,
-    loop: bool
+    loop: bool,
+    loopFrom: number,
+    loopTo: number
   },
 });
 
