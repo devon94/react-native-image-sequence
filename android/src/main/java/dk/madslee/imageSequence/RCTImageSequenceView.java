@@ -22,7 +22,6 @@ public class RCTImageSequenceView extends ImageView {
     private Integer loopTo = 0;
     private Boolean loop = true;
     private Boolean hasLoopInfo = false;
-    private Boolean didPlayOnce = false;
     private ArrayList<AsyncTask> activeTasks;
     private HashMap<Integer, Bitmap> bitmaps;
     private RCTResourceDrawableIdHelper resourceDrawableIdHelper;
@@ -159,20 +158,12 @@ public class RCTImageSequenceView extends ImageView {
         }
     }
 
-    public void setDidPlayOnce(Boolean didPlayOnce) {
-        this.didPlayOnce = didPlayOnce;
-    }
-
     private boolean isLoaded() {
         return !isLoading() && bitmaps != null && !bitmaps.isEmpty();
     }
 
     private boolean isLoading() {
         return activeTasks != null && !activeTasks.isEmpty();
-    }
-
-    private boolean hasLooped() {
-        return didPlayOnce;
     }
 
     private void setDrawable(AnimationDrawable drawable) {
@@ -206,12 +197,9 @@ public class RCTImageSequenceView extends ImageView {
 
                 @Override
                 public void onAnimationFinish() {
-                    if (!hasLooped()) {
-                        initialAnimationDrawable.stop();
-                        setDrawable(loopAnimationDrawable);
-                        loopAnimationDrawable.start();
-                        setDidPlayOnce(true);
-                    }
+                    initialAnimationDrawable.stop();
+                    setDrawable(loopAnimationDrawable);
+                    loopAnimationDrawable.start();
                 }
 
             };
