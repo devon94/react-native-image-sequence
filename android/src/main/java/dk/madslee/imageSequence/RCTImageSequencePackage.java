@@ -1,4 +1,4 @@
-package com.devon94.RNInageSequence;
+package com.devon94.RNImageSequence;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;

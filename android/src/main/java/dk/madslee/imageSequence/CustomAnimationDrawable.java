@@ -1,4 +1,4 @@
-package com.devon94.RNInageSequence;
+package com.devon94.RNImageSequence;
 
 import android.content.Context;
 import android.graphics.Bitmap;
