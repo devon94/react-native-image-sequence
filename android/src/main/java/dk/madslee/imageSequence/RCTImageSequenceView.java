@@ -27,7 +27,7 @@ public class RCTImageSequenceView extends ImageView {
     private ArrayList<AsyncTask> activeTasks;
     private HashMap<Integer, Bitmap> bitmaps;
     private RCTResourceDrawableIdHelper resourceDrawableIdHelper;
-    private static final String TAG = "RCTImageSequenceView";
+    private static final String TAG = "react-native-image-sequence";
 
     public RCTImageSequenceView(Context context) {
         super(context);
@@ -116,7 +116,7 @@ public class RCTImageSequenceView extends ImageView {
         int maxPoolSize = threadPoolExecutor.getMaximumPoolSize();        
         // being very cautious here 
         int maxQueueSize = (maxPoolSize * 8) - 16;
-        Log.i("react-native-image-sequence", "DownloadImageTask. Calculated max pool size: " + Integer.toString(maxQueueSize));
+        Log.i(TAG, "DownloadImageTask. Calculated max pool size: " + Integer.toString(maxQueueSize));
 
         activeTasks = new ArrayList<>(uris.size());
         bitmaps = new HashMap<>(uris.size());
@@ -130,7 +130,7 @@ public class RCTImageSequenceView extends ImageView {
 
             // If a request cannot be queued, a new thread is created unless this would exceed maximumPoolSize, in which case, the task will be rejected.
             if (taskQueueSize >= maxQueueSize) {
-                Log.i("react-native-image-sequence", "DownloadImageTask. Queue full, waiting...");
+                Log.i(TAG, "DownloadImageTask. Queue full, waiting...");
             }
 
             while (taskQueueSize >= maxQueueSize) {
@@ -140,11 +140,11 @@ public class RCTImageSequenceView extends ImageView {
 
             activeTasks.add(task);
             
-            Log.i("react-native-image-sequence", "DownloadImageTask. Queue has space, trying to add task to pool.");
+            Log.i(TAG, "DownloadImageTask. Queue has space, trying to add task to pool.");
             try {
                 task.executeOnExecutor(threadPoolExecutor);
             } catch (RejectedExecutionException e) {
-                Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
+                Log.e(TAG, "DownloadImageTask failed: " + e.getMessage());
             }
         }
 
