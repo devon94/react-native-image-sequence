@@ -17,7 +17,7 @@ class ImageSequence extends Component {
     }
 
     const { width, height, loopInfo, ...rest } = this.props
-    
+
     const startFrame = loopInfo && loopInfo.startFrame
     const loopFrom = loopInfo && loopInfo.loopFrom
     const loopTo = loopInfo && loopInfo.loopTo
@@ -30,7 +30,8 @@ class ImageSequence extends Component {
           hasLoopInfo={hasLoopInfo}
           startFrame={startFrame}
           loopFrom={loopFrom}
-          loopTo={loopTo} {...rest}
+          loopTo={loopTo}
+          {...rest}
           images={normalized}
         />
       </View>

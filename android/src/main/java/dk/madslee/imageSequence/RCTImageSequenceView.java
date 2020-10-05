@@ -14,10 +14,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.lang.Thread;
 
 public class RCTImageSequenceView extends ImageView {
-    private Integer framesPerSecond = 24;
+    private Integer framesPerSecond = 30;
     private Integer startFrame = 0;
     private Integer loopFrom = 0;
     private Integer loopTo = 0;
@@ -27,10 +30,12 @@ public class RCTImageSequenceView extends ImageView {
     private HashMap<Integer, Bitmap> bitmaps;
     private RCTResourceDrawableIdHelper resourceDrawableIdHelper;
     private static final String TAG = "RCTImageSequenceView";
+    private ExecutorService executorService;
 
     public RCTImageSequenceView(Context context) {
         super(context);
-
+        int n = Runtime.getRuntime().availableProcessors();
+        executorService = Executors.newFixedThreadPool(n);
         resourceDrawableIdHelper = new RCTResourceDrawableIdHelper();
     }
 
@@ -105,15 +110,24 @@ public class RCTImageSequenceView extends ImageView {
         activeTasks = new ArrayList<>(uris.size());
         bitmaps = new HashMap<>(uris.size());
 
+        ThreadPoolExecutor defaultExecutor = (ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR;
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                defaultExecutor.getCorePoolSize(),
+                defaultExecutor.getMaximumPoolSize(),
+                defaultExecutor.getKeepAliveTime(TimeUnit.MILLISECONDS),
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>()
+        );
+
         for (int index = 0; index < uris.size(); index++) {
             DownloadImageTask task = new DownloadImageTask(index, uris.get(index), getContext());
             activeTasks.add(task);
 
             try {
-                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                task.executeOnExecutor(executor);
+                taskCompleted = true;
             } catch (RejectedExecutionException e) {
-                Log.e("react-native-image-sequence", "DownloadImageTask failed" + e.getMessage());
-                break;
+                Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
             }
         }
     }
@@ -202,7 +216,6 @@ public class RCTImageSequenceView extends ImageView {
                 loopAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }
 
-            loopAnimationDrawable.setOneShot(!this.loop);
 
             final Integer newLoop = this.loopFrom;
 
@@ -221,7 +234,7 @@ public class RCTImageSequenceView extends ImageView {
 
             };
 
-            cad.setOneShot(true);
+            cad.setOneShot(!this.loop);
             setDrawable(cad);
             cad.start();
         } else {
@@ -232,7 +245,6 @@ public class RCTImageSequenceView extends ImageView {
                 initialAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }
 
-            initialAnimationDrawable.setOneShot(!this.loop);
 
             CustomAnimationDrawable cad = new CustomAnimationDrawable(initialAnimationDrawable) {
                 @Override
@@ -245,6 +257,7 @@ public class RCTImageSequenceView extends ImageView {
 
             };
 
+            cad.setOneShot(!this.loop);
             this.setImageDrawable(cad);
             cad.start();
         }
