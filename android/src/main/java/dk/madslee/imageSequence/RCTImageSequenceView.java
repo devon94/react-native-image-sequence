@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -30,12 +31,9 @@ public class RCTImageSequenceView extends ImageView {
     private HashMap<Integer, Bitmap> bitmaps;
     private RCTResourceDrawableIdHelper resourceDrawableIdHelper;
     private static final String TAG = "RCTImageSequenceView";
-    private ExecutorService executorService;
 
     public RCTImageSequenceView(Context context) {
         super(context);
-        int n = Runtime.getRuntime().availableProcessors();
-        executorService = Executors.newFixedThreadPool(n);
         resourceDrawableIdHelper = new RCTResourceDrawableIdHelper();
     }
 
