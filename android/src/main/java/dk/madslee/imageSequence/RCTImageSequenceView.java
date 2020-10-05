@@ -107,9 +107,11 @@ public class RCTImageSequenceView extends ImageView {
         ExecutorService executorService  = Executors.newFixedThreadPool(n);
         ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
         
-        int currentPoolSize = threadPoolExecutor.getPoolSize();
+        int maxPoolSize = threadPoolExecutor.getMaximumPoolSize();
+        Log.i("react-native-image-sequence", "DownloadImageTask. max pool size: " + Integer.toString(maxPoolSize));
         // being very cautious here 
-        int maxQueueSize = (currentPoolSize * 8) - 16;
+        int maxQueueSize = (maxPoolSize * 8) - 16;
+        Log.i("react-native-image-sequence", "DownloadImageTask. Calculated max pool size: " + Integer.toString(maxQueueSize));
 
         activeTasks = new ArrayList<>(uris.size());
         bitmaps = new HashMap<>(uris.size());
@@ -121,8 +123,8 @@ public class RCTImageSequenceView extends ImageView {
             int taskQueueSize = threadPoolExecutor.getQueue().size();
             long taskCount = threadPoolExecutor.getTaskCount();
 
-            Log.i("react-native-image-sequence", "DownloadImageTask current active task count: " + Integer.toString(taskQueueSize));
-            Log.i("react-native-image-sequence", "DownloadImageTask total task count: " + Long.toString(taskCount));
+            Log.i("react-native-image-sequence", "DownloadImageTask. current active task count: " + Integer.toString(taskQueueSize));
+            Log.i("react-native-image-sequence", "DownloadImageTask. total task count: " + Long.toString(taskCount));
             // If a request cannot be queued, a new thread is created unless this would exceed maximumPoolSize, in which case, the task will be rejected.
 
             while (taskQueueSize >= maxQueueSize) {
