@@ -103,12 +103,17 @@ public class RCTImageSequenceView extends ImageView {
             }
         }
 
-        int n = Runtime.getRuntime().availableProcessors();
-        ExecutorService executorService  = Executors.newFixedThreadPool(n);
-        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
-        
-        int maxPoolSize = threadPoolExecutor.getMaximumPoolSize();
-        Log.i("react-native-image-sequence", "DownloadImageTask. max pool size: " + Integer.toString(maxPoolSize));
+
+        ThreadPoolExecutor defaultExecutor = (ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR;
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+                defaultExecutor.getCorePoolSize(),
+                defaultExecutor.getMaximumPoolSize(),
+                defaultExecutor.getKeepAliveTime(TimeUnit.MILLISECONDS),
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>()
+        );
+
+        int maxPoolSize = threadPoolExecutor.getMaximumPoolSize();        
         // being very cautious here 
         int maxQueueSize = (maxPoolSize * 8) - 16;
         Log.i("react-native-image-sequence", "DownloadImageTask. Calculated max pool size: " + Integer.toString(maxQueueSize));
@@ -123,27 +128,27 @@ public class RCTImageSequenceView extends ImageView {
             int taskQueueSize = threadPoolExecutor.getQueue().size();
             long taskCount = threadPoolExecutor.getTaskCount();
 
-            Log.i("react-native-image-sequence", "DownloadImageTask. current active task count: " + Integer.toString(taskQueueSize));
-            Log.i("react-native-image-sequence", "DownloadImageTask. total task count: " + Long.toString(taskCount));
             // If a request cannot be queued, a new thread is created unless this would exceed maximumPoolSize, in which case, the task will be rejected.
+            if (taskQueueSize >= maxQueueSize) {
+                Log.i("react-native-image-sequence", "DownloadImageTask. Queue full, waiting...");
+            }
 
             while (taskQueueSize >= maxQueueSize) {
                 // do nothing and wait
                 taskQueueSize = threadPoolExecutor.getQueue().size();
-                Log.i("react-native-image-sequence", "DownloadImageTask. Queue full, waiting...");
             }
 
             activeTasks.add(task);
             
             Log.i("react-native-image-sequence", "DownloadImageTask. Queue has space, trying to add task to pool.");
             try {
-                task.executeOnExecutor(executorService);
+                task.executeOnExecutor(threadPoolExecutor);
             } catch (RejectedExecutionException e) {
                 Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
             }
         }
 
-        executorService.shutdown();
+        threadPoolExecutor.shutdown();
     }
 
     public void setHasLoopInfo(Boolean hasLoopInfo) {
