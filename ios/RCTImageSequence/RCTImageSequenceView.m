@@ -29,7 +29,7 @@
         NSString *url = [NSString stringWithFormat:@"file://%@", item[@"uri"]]; // when not in debug, the paths are "local paths" (because resources are bundled in app)
         #endif
 
-        dispatch_async(dispatch_queue_create("dk.mads-lee.ImageSequence.Downloader", NULL), ^{
+        dispatch_async(dispatch_queue_create("com.devon94.RNImageSequence.Downloader", NULL), ^{
             UIImage *frameImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:url]]];
             // here is the code to pre-render the image
             UIGraphicsBeginImageContext(frameImage.size);

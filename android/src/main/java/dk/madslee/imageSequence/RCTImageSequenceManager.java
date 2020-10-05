@@ -1,4 +1,4 @@
-package dk.madslee.imageSequence;
+package com.devon94.RNInageSequence;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;

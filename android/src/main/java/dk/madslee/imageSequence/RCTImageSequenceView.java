@@ -1,4 +1,4 @@
-package dk.madslee.imageSequence;
+package com.devon94.RNInageSequence;
 
 import android.content.Context;
 import android.graphics.Bitmap;
