@@ -152,6 +152,8 @@ public class RCTImageSequenceView extends ImageView {
                 retryAttempts++;
             }
         }
+
+        executorService.shutdown();
     }
 
     public void setHasLoopInfo(Boolean hasLoopInfo) {
