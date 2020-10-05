@@ -106,50 +106,38 @@ public class RCTImageSequenceView extends ImageView {
         int n = Runtime.getRuntime().availableProcessors();
         ExecutorService executorService  = Executors.newFixedThreadPool(n);
         ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
+        
+        int currentPoolSize = threadPoolExecutor.getPoolSize();
+        // being very cautious here 
+        int maxQueueSize = (currentPoolSize * 8) - 16;
 
         activeTasks = new ArrayList<>(uris.size());
         bitmaps = new HashMap<>(uris.size());
 
         for (int index = 0; index < uris.size(); index++) {
-            int retryAttempts = 0;
-            boolean taskCompleted = false;
 
             DownloadImageTask task = new DownloadImageTask(index, uris.get(index), getContext());
-            activeTasks.add(task);
-
-
+            
             int taskQueueSize = threadPoolExecutor.getQueue().size();
             long taskCount = threadPoolExecutor.getTaskCount();
+
             Log.i("react-native-image-sequence", "DownloadImageTask current active task count: " + Integer.toString(taskQueueSize));
             Log.i("react-native-image-sequence", "DownloadImageTask total task count: " + Long.toString(taskCount));
+            // If a request cannot be queued, a new thread is created unless this would exceed maximumPoolSize, in which case, the task will be rejected.
 
-            while (taskQueueSize >= 128) {
+            while (taskQueueSize >= maxQueueSize) {
                 // do nothing and wait
                 taskQueueSize = threadPoolExecutor.getQueue().size();
-                Log.i("react-native-image-sequence", "DownloadImageTask. Queue full, waiting... task current active task count: " + Integer.toString(taskQueueSize));
+                Log.i("react-native-image-sequence", "DownloadImageTask. Queue full, waiting...");
             }
+
+            activeTasks.add(task);
             
-            while (retryAttempts < 5) {
-                Log.i("react-native-image-sequence", "DownloadImageTask trying to add task to pool. Retry attempt: " + (retryAttempts + 1));
-                try {
-                    task.executeOnExecutor(executorService);
-                    taskCompleted = true;
-                } catch (RejectedExecutionException e) {
-                    Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
-                }
-
-                if (taskCompleted == true) {
-                    break;
-                }
-
-                try {
-                    Thread.sleep(250);
-                }  catch(InterruptedException e) {
-                    Log.e("react-native-image-sequence", "DownloadImageTask Thread.sleep interrupted: " + e.getMessage());
-                }
-
-                Log.i("react-native-image-sequence", "DownloadImageTask retyring now...");
-                retryAttempts++;
+            Log.i("react-native-image-sequence", "DownloadImageTask. Queue has space, trying to add task to pool.");
+            try {
+                task.executeOnExecutor(executorService);
+            } catch (RejectedExecutionException e) {
+                Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
             }
         }
 
