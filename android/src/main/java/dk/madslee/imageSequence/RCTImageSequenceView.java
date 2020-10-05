@@ -14,10 +14,11 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.*;
+import java.lang.Thread;
 
 public class RCTImageSequenceView extends ImageView {
-    private Integer framesPerSecond = 24;
+    private Integer framesPerSecond = 30;
     private Integer startFrame = 0;
     private Integer loopFrom = 0;
     private Integer loopTo = 0;
@@ -102,20 +103,32 @@ public class RCTImageSequenceView extends ImageView {
             }
         }
 
+
+        ThreadPoolExecutor defaultExecutor = (ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR;
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+                defaultExecutor.getCorePoolSize(),
+                defaultExecutor.getMaximumPoolSize(),
+                defaultExecutor.getKeepAliveTime(TimeUnit.MILLISECONDS),
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>()
+        );
+
         activeTasks = new ArrayList<>(uris.size());
         bitmaps = new HashMap<>(uris.size());
 
         for (int index = 0; index < uris.size(); index++) {
+
             DownloadImageTask task = new DownloadImageTask(index, uris.get(index), getContext());
             activeTasks.add(task);
 
             try {
-                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                task.executeOnExecutor(threadPoolExecutor);
             } catch (RejectedExecutionException e) {
-                Log.e("react-native-image-sequence", "DownloadImageTask failed" + e.getMessage());
-                break;
+                Log.e("RNImageSequence", "DownloadImageTask failed: " + e.getMessage());
             }
         }
+
+        threadPoolExecutor.shutdown();
     }
 
     public void setHasLoopInfo(Boolean hasLoopInfo) {
@@ -202,7 +215,6 @@ public class RCTImageSequenceView extends ImageView {
                 loopAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }
 
-            loopAnimationDrawable.setOneShot(!this.loop);
 
             final Integer newLoop = this.loopFrom;
 
@@ -221,7 +233,7 @@ public class RCTImageSequenceView extends ImageView {
 
             };
 
-            cad.setOneShot(true);
+            cad.setOneShot(!this.loop);
             setDrawable(cad);
             cad.start();
         } else {
@@ -232,7 +244,6 @@ public class RCTImageSequenceView extends ImageView {
                 initialAnimationDrawable.addFrame(drawable, 1000 / framesPerSecond);
             }
 
-            initialAnimationDrawable.setOneShot(!this.loop);
 
             CustomAnimationDrawable cad = new CustomAnimationDrawable(initialAnimationDrawable) {
                 @Override
@@ -245,6 +256,7 @@ public class RCTImageSequenceView extends ImageView {
 
             };
 
+            cad.setOneShot(!this.loop);
             this.setImageDrawable(cad);
             cad.start();
         }

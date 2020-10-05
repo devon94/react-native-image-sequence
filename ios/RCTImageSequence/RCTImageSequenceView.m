@@ -30,9 +30,16 @@
         #endif
 
         dispatch_async(dispatch_queue_create("dk.mads-lee.ImageSequence.Downloader", NULL), ^{
-            UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:url]]];
+            UIImage *frameImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:url]]];
+            // here is the code to pre-render the image
+            UIGraphicsBeginImageContext(frameImage.size);
+            CGRect rect = CGRectMake(0, 0, frameImage.size.width, frameImage.size.height);
+            [frameImage drawInRect:rect];
+            UIImage *renderedImage = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext();
+
             dispatch_async(dispatch_get_main_queue(), ^{
-              [weakSelf onImageLoadTaskAtIndex:index image:image];
+                [weakSelf onImageLoadTaskAtIndex:index image:renderedImage];
             });
         });
 
@@ -63,10 +70,10 @@
 
     [_imagesLoaded removeAllObjects];
 
-    self.image = nil;
     self.animationDuration = images.count * (1.0f / _framesPerSecond);
     self.animationImages = images;
     self.animationRepeatCount = _loop ? 0 : 1;
+    self.image = self.animationImages.lastObject;
     [self startAnimating];
 }
 
