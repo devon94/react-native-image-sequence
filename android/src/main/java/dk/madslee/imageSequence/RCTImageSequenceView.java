@@ -14,10 +14,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.lang.Thread;
 
 public class RCTImageSequenceView extends ImageView {
@@ -34,6 +31,7 @@ public class RCTImageSequenceView extends ImageView {
 
     public RCTImageSequenceView(Context context) {
         super(context);
+
         resourceDrawableIdHelper = new RCTResourceDrawableIdHelper();
     }
 
@@ -105,26 +103,53 @@ public class RCTImageSequenceView extends ImageView {
             }
         }
 
+        int n = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService  = Executors.newFixedThreadPool(n);
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
+
         activeTasks = new ArrayList<>(uris.size());
         bitmaps = new HashMap<>(uris.size());
 
-        ThreadPoolExecutor defaultExecutor = (ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR;
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                defaultExecutor.getCorePoolSize(),
-                defaultExecutor.getMaximumPoolSize(),
-                defaultExecutor.getKeepAliveTime(TimeUnit.MILLISECONDS),
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>()
-        );
-
         for (int index = 0; index < uris.size(); index++) {
+            int retryAttempts = 0;
+            boolean taskCompleted = false;
+
             DownloadImageTask task = new DownloadImageTask(index, uris.get(index), getContext());
             activeTasks.add(task);
 
-            try {
-                task.executeOnExecutor(executor);
-            } catch (RejectedExecutionException e) {
-                Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
+
+            int taskQueueSize = threadPoolExecutor.getQueue().size();
+            long taskCount = threadPoolExecutor.getTaskCount();
+            Log.i("react-native-image-sequence", "DownloadImageTask current active task count: " + Integer.toString(taskQueueSize));
+            Log.i("react-native-image-sequence", "DownloadImageTask total task count: " + Long.toString(taskCount));
+
+            while (taskQueueSize >= 128) {
+                // do nothing and wait
+                taskQueueSize = threadPoolExecutor.getQueue().size();
+                Log.i("react-native-image-sequence", "DownloadImageTask. Queue full, waiting... task current active task count: " + Integer.toString(taskQueueSize));
+            }
+            
+            while (retryAttempts < 5) {
+                Log.i("react-native-image-sequence", "DownloadImageTask trying to add task to pool. Retry attempt: " + (retryAttempts + 1));
+                try {
+                    task.executeOnExecutor(executorService);
+                    taskCompleted = true;
+                } catch (RejectedExecutionException e) {
+                    Log.e("react-native-image-sequence", "DownloadImageTask failed: " + e.getMessage());
+                }
+
+                if (taskCompleted == true) {
+                    break;
+                }
+
+                try {
+                    Thread.sleep(250);
+                }  catch(InterruptedException e) {
+                    Log.e("react-native-image-sequence", "DownloadImageTask Thread.sleep interrupted: " + e.getMessage());
+                }
+
+                Log.i("react-native-image-sequence", "DownloadImageTask retyring now...");
+                retryAttempts++;
             }
         }
     }
